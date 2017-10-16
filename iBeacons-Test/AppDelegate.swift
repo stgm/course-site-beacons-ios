@@ -7,15 +7,23 @@
 //
 
 import UIKit
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, ESTBeaconManagerDelegate {
 
     var window: UIWindow?
 
+    let beaconManager = ESTBeaconManager()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+
+        self.beaconManager.delegate = self
+        self.beaconManager.requestAlwaysAuthorization()
+        setupNotification()
+        self.beaconManager.startMonitoring(for: CLBeaconRegion(proximityUUID: UUID(uuidString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")!, major: 0xA116, identifier: "A1.16"))
+
         return true
     }
 
@@ -41,6 +49,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    func setupNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { (granted, error) in
+            print("notifications allowed? = \(granted)")
+        }
+    }
 
+    func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {
+        print("Enterd region \(region.identifier)")
+        showNotification(title: "Enterd area!", body: "you are close to \(region.identifier)")
+    }
+
+    func beaconManager(_ manager: Any, didExitRegion region: CLBeaconRegion) {
+        print("Left region \(region.identifier)")
+        showNotification(title: "Left area!", body: "you left \(region.identifier)")
+    }
+
+    func showNotification(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = UNNotificationSound.default()
+
+        let request = UNNotificationRequest(
+        identifier: "BeaconNotification", content: content, trigger: nil)
+        let center = UNUserNotificationCenter.current()
+        center.add(request, withCompletionHandler: nil)
+    }
 }
-
