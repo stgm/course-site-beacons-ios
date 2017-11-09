@@ -9,12 +9,14 @@
 import Foundation
 
 class CourseSiteConnection {
+    static let shared = CourseSiteConnection()
+
     var site: String?
     var token: String?
     var role: SiteRole = .notSet
     let defaults: UserDefaults = UserDefaults.standard
 
-    init() {
+    private init() {
         self.site = defaults.string(forKey: "site")
         self.token = defaults.string(forKey: "token")
         if let _ = site, let _ = token {
@@ -58,6 +60,44 @@ class CourseSiteConnection {
         self.site = site
     }
 
+    func sendPing(loca: String) {
+        do {
+            let url = URL(string:"\(try self.getURL())tracking/tokenized/ping?token=\(token!)&loca=\(loca)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
+                if let data = data {
+                    print(data)
+                }
+            })
+            task.resume()
+
+        } catch CourseSiteError.siteNotSet {
+
+        } catch {
+
+        }
+    }
+
+    func sendGone() {
+        do {
+            let url = URL(string:"\(try self.getURL())tracking/tokenized/gone?token=\(token!)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) in
+                if let data = data {
+                    print(data)
+                }
+            })
+            task.resume()
+
+        } catch CourseSiteError.siteNotSet {
+
+        } catch {
+
+        }
+    }
+
     fileprivate func loadRole() {
         do {
             if let _ = self.site, let token = self.token {
@@ -69,18 +109,18 @@ class CourseSiteConnection {
                     if let data = data {
                         let rawJSON = try? JSONSerialization.jsonObject(with: data)
                         let json = rawJSON as? [String: Any]
-                        print(json!)
-                        let role = json!["role"] as! String
+                        if let role = json!["role"] as? String {
 
-                        switch role {
-                        case "assistant":
-                            print("Assistant")
-                            self.role = .assistant
-                        case "student":
-                            print("Student")
-                            self.role = .student
-                        default:
-                            self.role = .notSet
+                            switch role {
+                            case "assistant":
+                                print("Assistant")
+                                self.role = .assistant
+                            case "student":
+                                print("Student")
+                                self.role = .student
+                            default:
+                                self.role = .notSet
+                            }
                         }
                     }
                     NotificationCenter.default.post(name: NSNotification.Name("loadedRole"), object: nil)
