@@ -71,11 +71,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate: ESTBeaconManagerDelegate {
     func beaconManager(_ manager: Any, didEnter region: CLBeaconRegion) {
-        print("Enterd region \(region.identifier)")
+        print("Entered region \(region.identifier)")
 
         sendPing(loca: region.major!)
 
-        showNotification(title: "Enterd area!", body: "you are close to \(region.identifier)")
+        showNotification(title: "Entered area!", body: "you are close to \(region.identifier)")
     }
 
     func beaconManager(_ manager: Any, didExitRegion region: CLBeaconRegion) {
@@ -87,12 +87,12 @@ extension AppDelegate: ESTBeaconManagerDelegate {
     }
 
     func sendPing(loca: NSNumber) {
-        let connection = CourseSiteConnection.shared
+        let connection = CourseSiteController.shared
         connection.sendPing(loca: loca.stringValue)
     }
 
     func sendGone() {
-        let connection = CourseSiteConnection.shared
+        let connection = CourseSiteController.shared
         connection.sendGone()
     }
 }

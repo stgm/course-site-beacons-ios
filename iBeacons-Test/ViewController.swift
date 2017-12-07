@@ -8,15 +8,38 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, CourceSiteDelegate {
+    func didLoad(role: SiteRole) {
+        DispatchQueue.main.async {
+            self.roleLabel.text = "Role: \(role)"
+        }
+    }
 
+    func loadedToken() {
+        DispatchQueue.main.async {
+            if let siteURL = self.connection.siteURL {
+                self.currentCourseButton.setTitle(siteURL, for: .normal)
+            } else {
+                self.currentCourseButton.setTitle("Tap here to setup site", for: .normal)
+            }
+
+            if self.connection.token != nil {
+                self.hasTokenButton.setTitle("Token has been set", for: .normal)
+            } else {
+                self.hasTokenButton.setTitle("Token has not been set", for: .normal)
+            }
+        }
+    }
+
+
+    // MARK: UI Things
     @IBOutlet weak var currentCourseButton: UIButton!
     @IBOutlet weak var hasTokenButton: UIButton!
     @IBOutlet weak var beaconStateLabel: UILabel!
     @IBOutlet weak var roleLabel: UILabel!
     
     let beaconManager = ESTBeaconManager()
-    let connection = CourseSiteConnection.shared
+    let connection = CourseSiteController.shared
 
     // Beacon Regions
     let A1_16 = CLBeaconRegion(proximityUUID: UUID(uuidString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")!, major: 0xA116, identifier: "A1.16")
@@ -28,20 +51,27 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        self.beaconManager.delegate = self
-        self.beaconManager.requestAlwaysAuthorization()
-        NotificationCenter.default.addObserver(self, selector: #selector(updateRoleInMain(_:)), name: Notification.Name("loadedRole"), object: nil)
+        beaconManager.delegate = self
+        beaconManager.requestAlwaysAuthorization()
+//        NotificationCenter.default.addObserver(self, selector: #selector(updateRoleInMain(_:)), name: Notification.Name("loadedRole"), object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(refreshUI(_:)), name: Notification.Name("refreshUI"), object: nil)
 
-        if let url = try? connection.getURL() {
-            currentCourseButton.setTitle(url, for: .normal)
-        } else {
-            currentCourseButton.setTitle("Tap here to setup site", for: .normal)
-        }
+        refreshUI(nil)
+    }
 
-        if connection.token != nil {
-            hasTokenButton.setTitle("Token has been set", for: .normal)
-        } else {
-            hasTokenButton.setTitle("Token has not been set", for: .normal)
+    @objc private func refreshUI(_ notification: NSNotification?) {
+        DispatchQueue.main.async {
+            if let siteURL = self.connection.siteURL {
+                self.currentCourseButton.setTitle(siteURL, for: .normal)
+            } else {
+                self.currentCourseButton.setTitle("Tap here to setup site", for: .normal)
+            }
+
+            if self.connection.token != nil {
+                self.hasTokenButton.setTitle("Token has been set", for: .normal)
+            } else {
+                self.hasTokenButton.setTitle("Token has not been set", for: .normal)
+            }
         }
     }
 
@@ -51,14 +81,14 @@ class ViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.beaconManager.startRangingBeacons(in: self.A1_16)
-        self.beaconManager.startRangingBeacons(in: self.A1_22)
-        self.beaconManager.startRangingBeacons(in: self.A1_30)
+        beaconManager.startRangingBeacons(in: self.A1_16)
+        beaconManager.startRangingBeacons(in: self.A1_22)
+        beaconManager.startRangingBeacons(in: self.A1_30)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        self.beaconManager.stopRangingBeaconsInAllRegions()
+        beaconManager.stopRangingBeaconsInAllRegions()
     }
 
     override func didReceiveMemoryWarning() {
@@ -73,8 +103,9 @@ class ViewController: UIViewController {
     }
 
     @IBAction func getTokenButton(_ sender: Any) {
-        do {
-        let alert = UIAlertController(title: "Insert code", message: "Please insrt code from\n \(try connection.getURL())", preferredStyle: .alert)
+        guard let siteURL = connection.siteURL else { return }
+
+        let alert = UIAlertController(title: "Insert code", message: "Please insert code from\n \(siteURL)profile/pair", preferredStyle: .alert)
         alert.addTextField { (field) in
             field.placeholder = "code"
             field.keyboardType = .numberPad
@@ -84,18 +115,10 @@ class ViewController: UIViewController {
         }))
         alert.addAction(UIAlertAction(title: "Submit", style: .default, handler: { (action) in
             if let code = alert.textFields![0].text {
-                try? self.connection.getToken(usingCode: code)
+                self.connection.getToken(usingCode: code)
             }
         }))
-            present(alert, animated: true)
-        } catch CourseSiteError.siteNotSet {
-            errorAlert(error: "Site not set.")
-        } catch {
-            print("bla")
-        }
-    }
-
-    @IBAction func startButtonPressed(_ sender: UIButton) {
+        present(alert, animated: true)
     }
     
     // MARK: Functions
@@ -110,10 +133,12 @@ class ViewController: UIViewController {
 
     // MARK: Course-site Interaction
 
+
+    /// Presents the user with an alert so it can enter a website.
     fileprivate func getCourseSite() {
-        let alert = UIAlertController(title: "Which site?", message: "Please enter the mprog website", preferredStyle: .alert )
+        let alert = UIAlertController(title: "Which site?", message: "Please enter the mprog website prefix", preferredStyle: .alert )
         alert.addTextField(configurationHandler: { (field) in
-            field.text = "apps"
+            field.placeholder = "apps"
             field.autocorrectionType = .no
             field.autocapitalizationType = .none
         })
@@ -123,7 +148,7 @@ class ViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Submit", style: .default, handler: { (action) in
             if let site = alert.textFields![0].text {
                 print(site)
-                self.connection.setSite(site: site)
+                self.connection.siteURL = site
             }
         }))
         present(alert, animated: true)
@@ -144,4 +169,10 @@ extension ViewController: ESTBeaconManagerDelegate {
         print("State for \(region.identifier) is \(stringState)")
         beaconStateLabel.text = "State for \(region.identifier) is \(stringState)"
     }
+    func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon], in region: CLBeaconRegion) {
+        for beacon in beacons {
+              print(beacon)
+        }
+    }
 }
+

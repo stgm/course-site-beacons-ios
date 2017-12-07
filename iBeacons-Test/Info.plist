@@ -2,19 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We'll show you cool things near you in the app.</string>
-
-    <!-- iOS 10 or earlier -->
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>We'll show you cool things near you in the app, and alert you via
-        notifications if you don't have the app open.</string>
-
-    <!-- iOS 11 -->
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>We'll show you cool things near you in the app. With the "always" option,
-        we can also alert you via notifications if you don't have the app open.</string>
-
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -33,6 +20,14 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We'll show you cool things near you in the app. With the "always" option,
+        we can also alert you via notifications if you don't have the app open.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We'll show you cool things near you in the app, and alert you via
+        notifications if you don't have the app open.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We'll show you cool things near you in the app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
